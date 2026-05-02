@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vinyl Hunter Field Tool</title>
+    <style>
+        :root {
+            --bg-dark: #0d1117;
+            --bg-darker: #010409;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent-gold: #d29922;
+            --accent-gold-hover: #e5a832;
+            --tier-s: #2ea043;
+            --tier-a: #1f6feb;
+            --tier-avoid: #f85149;
+        }
+        
+        [data-theme="light"] {
+            --bg-dark: #f6f4ed;
+            --bg-darker: #ebe8de;
+            --card-bg: #ffffff;
+            --border-color: #d0cdc1;
+            --text-main: #2c2a24;
+            --text-muted: #6e6b5e;
+            --accent-gold: #b87f1a;
+            --accent-gold-hover: #8a5f13;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 8px;
+            font-size: 20px;
+            width: auto;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        
+        .subtitle-header {
+            color: var(--accent-gold);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 8px;
+        }
+        
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            width: auto;
+            transition: background 0.2s;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--bg-darker);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: -280px;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            transition: left 0.3s;
+            z-index: 200;
+            overflow-y: auto;
+            padding: 60px 0 20px 0;
+        }
+        
+        .sidebar.open {
+            left: 0;
+        }
+        
+        .sidebar-title {
+            padding: 0 20px;
+            color: var(--accent-gold);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        
+        .history-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .history-item:hover {
+            background: var(--bg-darker);
+        }
+        
+        .history-album {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+        
+        .history-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .no-history {
+            padding: 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        
+        /* Main content */
+        .main {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        .search-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-size: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+        }
+        
+        .suggestions {
+            margin-bottom: 12px;
+            display: none;
+        }
+        
+        .suggestion-item {
+            padding: 8px 12px;
+            background: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        
+        .suggestion-item:hover {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border-color: var(--accent-gold);
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--accent-gold);
+            color: var(--bg-dark);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: var(--accent-gold-hover);
+        }
+        
+        /* Loading states */
+        .loading-container {
+            text-align: center;
+            padding: 30px 0;
+            display: none;
+        }
+        
+        .loading-step {
+            color: var(--accent-gold);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Card */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .card-header {
+            background: var(--bg-darker);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px;
+        }
+        
+        .card h2 {
+            font-size: 1.6rem;
+            color: var(--text-main);
+            margin-bottom: 5px;
+        }
+        
+        .card h3 {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-darker);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab:hover {
+            color: var(--text-main);
+        }
+        
+        .tab.active {
+            color: var(--accent-gold);
+            border-bottom-color: var(--accent-gold);
+        }
+        
+        .tab-content {
+            padding: 20px;
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Content styling */
+        .section-title {
+            color: var(--accent-gold);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 20px 0 12px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .section-title:first-child {
+            margin-top: 0;
+        }
+        
+        ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+        
+        li {
+            margin-bottom: 14px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            position: relative;
+        }
+        
+        .tier-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 6px;
+            cursor: help;
+            position: relative;
+        }
+        
+        .tier-s { background: var(--tier-s); color: white; }
+        .tier-a { background: var(--tier-a); color: white; }
+        .tier-avoid { background: var(--tier-avoid); color: white; }
+        
+        .copy-btn {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 6px;
+            background: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            width: auto;
+        }
+        
+        .copy-btn:hover {
+            background: var(--border-color);
+            color: var(--text-main);
+        }
+        
+        .copy-btn.copied {
+            background: var(--tier-s);
+            color: white;
+            border-color: var(--tier-s);
+        }
+        
+        .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .detail-label {
+            min-width: 80px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        
+        .detail-content {
+            flex: 1;
+        }
+        
+        /* Actions */
+        .card-actions {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            background: var(--bg-darker);
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: var(--bg-dark);
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+        
+        .error-msg {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid var(--tier-avoid);
+            color: var(--tier-avoid);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-main);
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .tooltip.show {
+            opacity: 1;
+        }
+        
+        /* Print styles */
+        @media print {
+            body { background: white; color: black; }
+            .header, .sidebar, .search-box, .tabs, .card-actions, .copy-btn { display: none; }
+            .card { border: 2px solid black; box-shadow: none; }
+            .tab-content { display: block !important; }
+            .tier-badge { border: 1px solid black; }
+        }
+        
+        .print-view {
+            display: none;
+        }
+        
+        @media print {
+            .main { display: none; }
+            .print-view { display: block; }
+            .print-card {
+                width: 6in;
+                height: 4in;
+                padding: 0.25in;
+                border: 2px solid black;
+                page-break-after: always;
+            }
+            .print-title { font-size: 14pt; font-weight: bold; margin-bottom: 8pt; }
+            .print-section { margin-bottom: 12pt; }
+            .print-label { font-size: 8pt; font-weight: bold; text-transform: uppercase; }
+            .print-content { font-size: 9pt; line-height: 1.3; }
+        }
+        
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 150;
+            display: none;
+        }
+        
+        .overlay.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-title">Recent searches</div>
+    <div id="historyList">
+        <div class="no-history">No searches yet</div>
+    </div>
+</div>
+
+<div class="header">
+    <div class="header-left">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div>
+            <span class="logo">VINYL HUNTER</span>
+            <span class="subtitle-header">Field tool</span>
+        </div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀</button>
+</div>
+
+<div class="main">
+    <div class="search-box">
+        <form method="POST" onsubmit="showLoading(event)">
+            <input 
+                type="text" 
+                name="album" 
+                id="albumInput"
+                placeholder="Album name (e.g., Dark Side of the Moon)" 
+                required 
+                value="{{ query if query else '' }}"
+                autocomplete="off"
+                onfocus="showSuggestions()"
+            >
+            <div class="suggestions" id="suggestions"></div>
+            <button type="submit">Analyze pressing ↗</button>
+        </form>
+    </div>
+
+    <div class="loading-container" id="loading">
+        <div class="loading-step" style="animation-delay: 0s;">Searching discographies...</div>
+        <div class="loading-step" style="animation-delay: 1s;">Cross-referencing deadwax databases...</div>
+        <div class="loading-step" style="animation-delay: 2s;">Compiling pressing variants...</div>
+        <div class="spinner"></div>
+    </div>
+
+    {% if error %}
+        <div class="error-msg"><strong>Error:</strong> {{ error }}</div>
+    {% endif %}
+
+    {% if data %}
+    <div class="card">
+        <div class="card-header">
+            <h2>{{ data.album_name }}</h2>
+            <h3>{{ data.artist }}</h3>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">Overview</div>
+            <div class="tab" onclick="switchTab(1)">Deadwax</div>
+            <div class="tab" onclick="switchTab(2)">Pressings</div>
+            <div class="tab" onclick="switchTab(3)">Visuals</div>
+        </div>
+
+        <div class="tab-content active">
+            <div class="section-title">Quick reference</div>
+            <div class="detail-row">
+                <div class="detail-label">Artist:</div>
+                <div class="detail-content">{{ data.artist }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Album:</div>
+                <div class="detail-content">{{ data.album_name }}</div>
+            </div>
+            
+            <div class="section-title">Top tier pressings</div>
+            <ul>
+                {% for item in data.mix_deadwax_info %}
+                    {% if '[S-Tier]' in item or '[S-tier]' in item %}
+                        <li>
+                            <span class="tier-badge tier-s" title="Sought-after mastering with significant value premium">S-Tier</span>
+                            {{ item | replace('[S-Tier]', '') | replace('[S-tier]', '') }}
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            
+            <div class="section-title">Key visual identifiers</div>
+            <div class="detail-row">
+                <div class="detail-label">Label:</div>
+                <div class="detail-content">{{ data.center_label }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Cover:</div>
+                <div class="detail-content">{{ data.cover_info }}</div>
+            </div>
+        </div>
+
+        <div class="tab-content">
+            <div class="section-title">Matrix / Deadwax identifiers</div>
+            <ul>
+                {% for item in data.mix_deadwax_info %}
+                    <li>
+                        {% set signature = item.split(' - ')[0] if ' - ' in item else item.split(':')[0] %}
+                        {% if '[S-Tier]' in item or '[S-tier]' in item %}
+                            <span class="tier-badge tier-s" onmouseenter="showTooltip(event, 'Sought-after mastering with significant value premium')" onmouseleave="hideTooltip()">S-Tier</span>
+                            {{ item | replace('[S-Tier]', '') | replace('[S-tier]', '') }}
+                            <button class="copy-btn" onclick="copyText(event, '{{ signature }}')">📋</button>
+                        {% elif '[Avoid]' in item or '[avoid]' in item %}
+                            <span class="tier-badge tier-avoid" onmouseenter="showTooltip(event, 'Known quality issues or unauthorized pressings')" onmouseleave="hideTooltip()">Avoid</span>
+                            {{ item | replace('[Avoid]', '') | replace('[avoid]', '') }}
+                            <button class="copy-btn" onclick="copyText(event, '{{ signature }}')">📋</button>
+                        {% elif '[A-tier]' in item or '[A-Tier]' in item %}
+                            <span class="tier-badge tier-a" onmouseenter="showTooltip(event, 'High-quality pressing, above average')" onmouseleave="hideTooltip()">A-Tier</span>
+                            {{ item | replace('[A-tier]', '') | replace('[A-Tier]', '') }}
+                            <button class="copy-btn" onclick="copyText(event, '{{ signature }}')">📋</button>
+                        {% else %}
+                            {{ item }}
+                            <button class="copy-btn" onclick="copyText(event, '{{ signature }}')">📋</button>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="tab-content">
+            <div class="section-title">Notable editions</div>
+            <ul>
+                {% for version in data.version_explore %}
+                    <li>{{ version }}</li>
+                {% endfor %}
+            </ul>
+            
+            {% if data.variation_info %}
+            <div class="section-title">Vinyl variations</div>
+            <div class="detail-content">{{ data.variation_info }}</div>
+            {% endif %}
+        </div>
+
+        <div class="tab-content">
+            <div class="section-title">Visual identifiers</div>
+            <div class="detail-row">
+                <div class="detail-label">Cover:</div>
+                <div class="detail-content">{{ data.cover_info }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Label:</div>
+                <div class="detail-content">{{ data.center_label }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Sleeve:</div>
+                <div class="detail-content">{{ data.sleeve_info }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Inserts:</div>
+                <div class="detail-content">{{ data.insert_info }}</div>
+            </div>
+        </div>
+
+        <div class="card-actions">
+            <button class="action-btn" onclick="printCard()">Print field card</button>
+            <button class="action-btn" onclick="shareResult()">Share link</button>
+        </div>
+    </div>
+    
+    <script>
+        saveToHistory('{{ query if query else "" }}');
+    </script>
+    {% endif %}
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// Theme toggle
+function toggleTheme() {
+    const html = document.documentElement;
+    const btn = document.getElementById('themeBtn');
+    if (html.getAttribute('data-theme') === 'light') {
+        html.removeAttribute('data-theme');
+        btn.textContent = '☀';
+        localStorage.setItem('theme', 'dark');
+    } else {
+        html.setAttribute('data-theme', 'light');
+        btn.textContent = '☾';
+        localStorage.setItem('theme', 'light');
+    }
+}
+
+// Load saved theme
+if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('themeBtn').textContent = '☾';
+}
+
+// Sidebar
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+}
+
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('show');
+}
+
+// History
+function saveToHistory(query) {
+    if (!query) return;
+    
+    let history = JSON.parse(sessionStorage.getItem('vinylHistory') || '[]');
+    
+    // Don't duplicate
+    history = history.filter(item => item.query !== query);
+    
+    history.unshift({
+        query: query,
+        timestamp: new Date().toISOString()
+    });
+    
+    // Keep last 10
+    history = history.slice(0, 10);
+    
+    sessionStorage.setItem('vinylHistory', JSON.stringify(history));
+    renderHistory();
+}
+
+function renderHistory() {
+    const list = document.getElementById('historyList');
+    const history = JSON.parse(sessionStorage.getItem('vinylHistory') || '[]');
+    
+    if (history.length === 0) {
+        list.innerHTML = '<div class="no-history">No searches yet</div>';
+        return;
+    }
+    
+    list.innerHTML = history.map(item => {
+        const date = new Date(item.timestamp);
+        const timeAgo = getTimeAgo(date);
+        return `
+            <div class="history-item" onclick="searchAgain('${item.query.replace(/'/g, "\\'")}')">
+                <div class="history-album">${item.query}</div>
+                <div class="history-time">${timeAgo}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+    if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+    return Math.floor(seconds / 86400) + 'd ago';
+}
+
+function searchAgain(query) {
+    document.getElementById('albumInput').value = query;
+    closeSidebar();
+    document.querySelector('form').submit();
+}
+
+renderHistory();
+
+// Suggestions
+const suggestions = [
+    'Pink Floyd - The Dark Side of the Moon',
+    'Miles Davis - Kind of Blue',
+    'The Beatles - Abbey Road',
+    'Radiohead - OK Computer',
+    'Kendrick Lamar - To Pimp a Butterfly',
+    'Fleetwood Mac - Rumours'
+];
+
+function showSuggestions() {
+    const input = document.getElementById('albumInput');
+    const container = document.getElementById('suggestions');
+    
+    if (input.value.length > 0) return;
+    
+    container.innerHTML = suggestions.slice(0, 3).map(s => 
+        `<div class="suggestion-item" onclick="useSuggestion('${s}')">${s}</div>`
+    ).join('');
+    container.style.display = 'block';
+}
+
+function useSuggestion(text) {
+    document.getElementById('albumInput').value = text;
+    document.getElementById('suggestions').style.display = 'none';
+}
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-box')) {
+        document.getElementById('suggestions').style.display = 'none';
+    }
+});
+
+// Loading
+function showLoading(e) {
+    const query = document.getElementById('albumInput').value;
+    if (!query) return;
+    
+    document.getElementById('loading').style.display = 'block';
+}
+
+// Tabs
+function switchTab(index) {
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
+    });
+    
+    contents.forEach((content, i) => {
+        content.classList.toggle('active', i === index);
+    });
+}
+
+// Copy
+function copyText(event, text) {
+    event.preventDefault();
+    const btn = event.target;
+    
+    navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = '✓';
+        btn.classList.add('copied');
+        
+        setTimeout(() => {
+            btn.textContent = original;
+            btn.classList.remove('copied');
+        }, 2000);
+    });
+}
+
+// Tooltip
+let tooltipTimeout;
+function showTooltip(event, text) {
+    clearTimeout(tooltipTimeout);
+    const tooltip = document.getElementById('tooltip');
+    tooltip.textContent = text;
+    tooltip.style.left = event.pageX + 10 + 'px';
+    tooltip.style.top = event.pageY + 10 + 'px';
+    
+    tooltipTimeout = setTimeout(() => {
+        tooltip.classList.add('show');
+    }, 300);
+}
+
+function hideTooltip() {
+    clearTimeout(tooltipTimeout);
+    document.getElementById('tooltip').classList.remove('show');
+}
+
+// Print
+function printCard() {
+    window.print();
+}
+
+// Share
+function shareResult() {
+    const url = window.location.href;
+    if (navigator.share) {
+        navigator.share({
+            title: 'Vinyl Hunter Result',
+            url: url
+        });
+    } else {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Link copied to clipboard');
+        });
+    }
+}
+</script>
+
+</body>
+</html>

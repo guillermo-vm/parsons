@@ -1,0 +1,14 @@
+streamlit
+google-genai
+google-api_core
+spotipy
+python-dotenv
+pandas
+requests
+PyYAML
+logging
+dataclasses
+flask
+flask_httpauth
+werkzeug
+gunicorn
