@@ -1,16 +1,33 @@
-# 1. Use Python 3.11
-FROM python:3.11-slim
+# Stage 1: Build stage
+FROM python:3.11-slim AS builder
 
-# 2. Set the directory in the container
+# Install uv by copying it from the official image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Set the working directory
 WORKDIR /app
 
-# 3. Copy your requirements and install them
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy dependency files first (for better caching)
+COPY pyproject.toml uv.lock ./
 
-# 4. Copy the rest of your code
+# Install dependencies into a virtual environment
+# We use --frozen to ensure it matches your local uv.lock exactly
+RUN uv sync --frozen --no-install-project --no-dev
+
+# Stage 2: Run stage
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy the virtual environment and your code from the builder stage
+COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
-# 5. Run the app using Gunicorn on port 8080
-# Replace 'app:app' with 'yourfilename:appname' if they are different
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
+# Add the virtual environment to the PATH so 'gunicorn' can be found
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Expose port 8080
+EXPOSE 8080
+
+# Start the app
+CMD ["gunicorn", "--bind", ":8080", "--workers", 1, "--threads", 8, "--timeout", 0, "app:app"]
